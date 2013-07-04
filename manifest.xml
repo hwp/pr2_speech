@@ -1,0 +1,10 @@
+<package>
+  <description brief="pr2_speech">
+    pr2_speech
+  </description>
+  <author>Weipeng He</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/pr2_speech</url>
+  <depend package="pocketsphinx"/>
+</package>
