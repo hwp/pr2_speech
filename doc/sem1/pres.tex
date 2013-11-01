@@ -1,0 +1,63 @@
+\documentclass{beamer}
+
+\title{Sound Source Localization and Separation}
+\author{Weipeng He}
+
+\usetheme{Warsaw}
+
+\begin{document}
+
+\frame{\titlepage}
+
+\begin{frame}
+  \frametitle{Task}
+  \begin{block}{Input}
+  Multichannel audio signal (from KINECT);
+  \end{block}
+  ~
+  \begin{block}{Outputs}
+  The direction of arrival and separated signal of each sound source; 
+  \end{block}
+  ~
+  \begin{block}{Meaning}
+  Reducing the noise in the environment; \\
+  Better signal for speech recognition.
+  \end{block}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Result of Last Semester}
+  
+  \begin{itemize}
+    \item Sound source localization using HARK.
+      \begin{itemize}
+        \item No significant correct result:
+        \item Noise from the environment;
+        \item Distance between the microphone is short.
+      \end{itemize}
+    ~
+
+    \item Sound source separation using HARK.
+      \begin{itemize}
+        \item Depends on the result of localization.
+      \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Limitations and Improvement}
+  
+  \begin{itemize}
+     \item Flow design in HARK, hard to customize;
+     \item Impossible to change algorithm;
+
+     ~
+     
+     \item Use the HARK-Kinect driver.
+     \item Implement an algorithm\footnote{Otsuka, T., Ishiguro, K., Sawada, H., & Okuno, H. G. (2012). Bayesian Unification of Sound Source Localization and Separation with Permutation Resolution. In \textit{Proc. of AAAI Conf. on Artificial Intelligence} (pp. 2038-2045).} by hand.
+     \item (OPTIONAL) Use customized microphone array.
+  \end{itemize}
+  
+\end{frame}
+
+\end{document}
