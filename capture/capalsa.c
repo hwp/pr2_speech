@@ -50,6 +50,27 @@ void printState(snd_pcm_t* handle) {
   }
 }
 
+void showDevices() {
+  char** hints;
+  /* Enumerate sound devices */
+  int rc = snd_device_name_hint(-1, "pcm", (void***)&hints);
+  if (rc < 0) {
+    fprintf(stderr, "Error (at %s:%d) : %s\n",
+        __FILE__, __LINE__, snd_strerror(rc));
+  }
+
+  char** n = hints;
+  while (*n != NULL) {
+    char* name = snd_device_name_get_hint(*n, "NAME");
+    if (name != NULL && 0 != strcmp("null", name)) {
+      free(name);
+    }
+    n++;
+  }
+
+  snd_device_name_free_hint((void**)hints);
+}
+
 int main(int argc, char* argv[]) {
   int rc;
   snd_pcm_t *handle;
@@ -61,10 +82,14 @@ int main(int argc, char* argv[]) {
   unsigned int channels = 1;
   unsigned int rate = 44100;
   unsigned int duration = 5;
+  int showhelp = 0;
 
   int opt;
-  while ((opt = getopt(argc, argv, "D:c:d:r:")) != -1) {
+  while ((opt = getopt(argc, argv, "hD:c:d:r:")) != -1) {
     switch (opt) {
+      case 'h':
+        showhelp = 1;
+        break;
       case 'D':
         device = strdup(optarg);
         break;
@@ -78,10 +103,16 @@ int main(int argc, char* argv[]) {
         rate = atoi(optarg);
         break;
       default: /* '?' */
-        fprintf(stderr, "Usage: %s [-D device] [-c channels] "
-            "[-d duration] [-r rate]\n", argv[0]);
-        exit(EXIT_FAILURE);
+        showhelp = 1;
+        break;
     }
+  }
+
+  if (showhelp) {
+    fprintf(stderr, "Usage: %s [-D device] [-c channels] "
+        "[-d duration] [-r rate]\n", argv[0]);
+    showDevices();
+    return 0;
   }
 
   /* Open PCM device for recording (capture). */
@@ -93,25 +124,47 @@ int main(int argc, char* argv[]) {
   }
 
   /* Allocate a hardware parameters object. */
-  snd_pcm_hw_params_malloc(&params);
+  rc = snd_pcm_hw_params_malloc(&params);
+  if (rc < 0) {
+    fprintf(stderr, "Error at %s:%d : %s\n", __FILE__, __LINE__, snd_strerror(rc));
+    snd_pcm_recover(handle, rc, 0);
+  }
 
   /* Fill it in with default values. */
-  snd_pcm_hw_params_any(handle, params);
+  rc = snd_pcm_hw_params_any(handle, params);
+  if (rc < 0) {
+    fprintf(stderr, "Error at %s:%d : %s\n", __FILE__, __LINE__, snd_strerror(rc));
+    snd_pcm_recover(handle, rc, 0);
+  }
 
   /* Set the desired hardware parameters. */
-
   /* Interleaved mode */
-  snd_pcm_hw_params_set_access(handle, params,
-      SND_PCM_ACCESS_RW_INTERLEAVED);
+  rc = snd_pcm_hw_params_set_access(handle, params, SND_PCM_ACCESS_RW_INTERLEAVED);
+  if (rc < 0) {
+    fprintf(stderr, "Error at %s:%d : %s\n", __FILE__, __LINE__, snd_strerror(rc));
+    snd_pcm_recover(handle, rc, 0);
+  }
 
   /* Signed 16-bit little-endian format */
-  snd_pcm_hw_params_set_format(handle, params, SND_PCM_FORMAT_S16_LE);
+  rc = snd_pcm_hw_params_set_format(handle, params, SND_PCM_FORMAT_S16_LE);
+  if (rc < 0) {
+    fprintf(stderr, "Error at %s:%d : %s\n", __FILE__, __LINE__, snd_strerror(rc));
+    snd_pcm_recover(handle, rc, 0);
+  }
 
   /* channels */
-  snd_pcm_hw_params_set_channels(handle, params, channels);
+  rc = snd_pcm_hw_params_set_channels_near(handle, params, &channels);
+  if (rc < 0) {
+    fprintf(stderr, "Error at %s:%d : %s\n", __FILE__, __LINE__, snd_strerror(rc));
+    snd_pcm_recover(handle, rc, 0);
+  }
 
   /* sampling rate */
-  snd_pcm_hw_params_set_rate_near(handle, params, &rate, &dir);
+  rc = snd_pcm_hw_params_set_rate_near(handle, params, &rate, &dir);
+  if (rc < 0) {
+    fprintf(stderr, "Error at %s:%d : %s\n", __FILE__, __LINE__, snd_strerror(rc));
+    snd_pcm_recover(handle, rc, 0);
+  }
 
   /* Set period size to 32 frames. */
   snd_pcm_uframes_t frames = 32;
@@ -121,22 +174,38 @@ int main(int argc, char* argv[]) {
   rc = snd_pcm_hw_params(handle, params);
   if (rc < 0) {
     fprintf(stderr, "unable to set hw parameters: %s\n", snd_strerror(rc));
+    snd_pcm_recover(handle, rc, 0);
     exit(1);
   }
 
   /* Use a buffer large enough to hold one period */
-  snd_pcm_hw_params_get_period_size(params, &frames, &dir);
+  rc = snd_pcm_hw_params_get_period_size(params, &frames, &dir);
+  if (rc < 0) {
+    fprintf(stderr, "Error at %s:%d : %s\n", __FILE__, __LINE__, snd_strerror(rc));
+    snd_pcm_recover(handle, rc, 0);
+  }
   size_t size = frames * 2 * channels; /* 2 bytes/sample times #channels */
-  buffer = (char*)malloc(size);
+  buffer = (char*)malloc(size * 2);
 
   /* We want to loop for 5 seconds */
   unsigned int ptime;
-  snd_pcm_hw_params_get_period_time(params, &ptime, &dir);
+  rc = snd_pcm_hw_params_get_period_time(params, &ptime, &dir);
+  if (rc < 0) {
+    fprintf(stderr, "Error at %s:%d : %s\n", __FILE__, __LINE__, snd_strerror(rc));
+    snd_pcm_recover(handle, rc, 0);
+  }
   long loops = duration * 1000000 / ptime;
 
-  fprintf(stderr, "Capture Sound\nDevice : %s\nChannels : %d\nRate : %dHz\n"
-      "Duration : %ds (%ld loops)\n",
-      device, channels, rate, duration, loops);
+  snd_pcm_format_t format;
+  rc = snd_pcm_hw_params_get_format(params, &format);
+  if (rc < 0) {
+    fprintf(stderr, "Error at %s:%d : %s\n", __FILE__, __LINE__, snd_strerror(rc));
+    snd_pcm_recover(handle, rc, 0);
+  }
+
+  fprintf(stderr, "Capture Sound\nDevice : %s\nChannels : %d\n"
+      "Rate : %dHz\nFormat : %s\nDuration : %ds (%ld loops)\n",
+      device, channels, rate, snd_pcm_format_name(format), duration, loops);
 
   while (loops > 0) {
     loops--;
@@ -144,33 +213,59 @@ int main(int argc, char* argv[]) {
     if (rc == -EPIPE) {
       /* EPIPE means overrun */
       fprintf(stderr, "overrun occurred\n");
+      snd_pcm_recover(handle, rc, 0);
       snd_pcm_prepare(handle);
-    } else if (rc < 0) {
-      fprintf(stderr,
-          "error from read: %s\n",
-          snd_strerror(rc));
-    } else if (rc != (int)frames) {
+    }
+    else if (rc < 0) {
+      fprintf(stderr, "error from read: %s\n", snd_strerror(rc));
+      snd_pcm_recover(handle, rc, 0);
+    }
+    else if (rc != (int)frames) {
       fprintf(stderr, "short read, read %d frames\n", rc);
     }
     rc = write(1, buffer, size);
     if (rc != size)
-      fprintf(stderr,
-          "short write: wrote %d bytes\n", rc);
+      fprintf(stderr, "short write: wrote %d bytes\n", rc);
   }
 
   fprintf(stderr, "Finished #0\n");
-  snd_pcm_drain(handle);
+  rc = snd_pcm_drain(handle);
+  if (rc < 0) {
+    fprintf(stderr, "Error (at %s:%d) : %s\n",
+        __FILE__, __LINE__, snd_strerror(rc));
+    snd_pcm_recover(handle, rc, 0);
+  }
+  
   printState(handle);
-  snd_pcm_nonblock(handle, 0);
-  printState(handle);
-  fprintf(stderr, "Finished #1/2\n");
-  snd_pcm_hw_free(handle);
+  rc = snd_pcm_nonblock(handle, 0);
+  if (rc < 0) {
+    fprintf(stderr, "Error (at %s:%d) : %s\n",
+        __FILE__, __LINE__, snd_strerror(rc));
+    snd_pcm_recover(handle, rc, 0);
+  }
+  
   printState(handle);
   fprintf(stderr, "Finished #1\n");
+  rc = snd_pcm_hw_free(handle);
+  if (rc < 0) {
+    fprintf(stderr, "Error (at %s:%d) : %s\n",
+        __FILE__, __LINE__, snd_strerror(rc));
+    snd_pcm_recover(handle, rc, 0);
+  }
+
   printState(handle);
   fprintf(stderr, "Finished #2\n");
-  free(buffer);
+  rc = snd_pcm_close(handle);
+  if (rc < 0) {
+    fprintf(stderr, "Error (at %s:%d) : %s\n",
+        __FILE__, __LINE__, snd_strerror(rc));
+    snd_pcm_recover(handle, rc, 0);
+  }
+
   fprintf(stderr, "Finished #3\n");
+
+  free(buffer);
+  fprintf(stderr, "Finished #4\n");
 
   return 0;
 }
