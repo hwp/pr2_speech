@@ -120,7 +120,7 @@ int main(int argc, char* argv[]) {
   if (rc < 0) {
     fprintf(stderr, "unable to open pcm device: %s\n",
         snd_strerror(rc));
-    exit(1);
+    exit(EXIT_FAILURE);
   }
 
   /* Allocate a hardware parameters object. */
@@ -175,7 +175,7 @@ int main(int argc, char* argv[]) {
   if (rc < 0) {
     fprintf(stderr, "unable to set hw parameters: %s\n", snd_strerror(rc));
     snd_pcm_recover(handle, rc, 0);
-    exit(1);
+    exit(EXIT_FAILURE);
   }
 
   /* Use a buffer large enough to hold one period */
@@ -195,7 +195,7 @@ int main(int argc, char* argv[]) {
   rc = snd_pcm_format_physical_width(format);
   if (rc < 0) {
     fprintf(stderr, "Error at %s:%d : %s\n", __FILE__, __LINE__, snd_strerror(rc));
-    return EXIT_FAILURE;
+    exit(EXIT_FAILURE);
   }
   size_t size = frames * (rc / 8) * channels;
   buffer = (char*)malloc(size);
@@ -244,6 +244,6 @@ int main(int argc, char* argv[]) {
 
   free(buffer);
 
-  return 0;
+  exit(EXIT_SUCCESS);
 }
 
