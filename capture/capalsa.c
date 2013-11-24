@@ -4,74 +4,12 @@
 // Author : Weipeng He <heweipeng@gmail.com>
 // Copyright (c) 2013, All rights reserved.
 
-/*
-This example reads from the default PCM device
-and writes to standard output for 5 seconds of data.
-*/
-
 /* Use the newer ALSA API */
 #define ALSA_PCM_NEW_HW_PARAMS_API
 
 #include <alsa/asoundlib.h>
 
-void printState(snd_pcm_t* handle) {
-  int s = snd_pcm_state(handle);
-  switch (s) {
-    case SND_PCM_STATE_OPEN:
-      fprintf(stderr, "PCM State : OPEN\n");
-      break;
-    case SND_PCM_STATE_SETUP:
-      fprintf(stderr, "PCM State : SETUP\n");
-      break;
-    case SND_PCM_STATE_PREPARED:
-      fprintf(stderr, "PCM State : PREPARED\n");
-      break;
-    case SND_PCM_STATE_RUNNING:
-      fprintf(stderr, "PCM State : RUNNING\n");
-      break;
-    case SND_PCM_STATE_XRUN:
-      fprintf(stderr, "PCM State : XRUN\n");
-      break;
-    case SND_PCM_STATE_DRAINING:
-      fprintf(stderr, "PCM State : DRAINING\n");
-      break;
-    case SND_PCM_STATE_PAUSED:
-      fprintf(stderr, "PCM State : PAUSED\n");
-      break;
-    case SND_PCM_STATE_SUSPENDED:
-      fprintf(stderr, "PCM State : SUSPENDED\n");
-      break;
-    case SND_PCM_STATE_DISCONNECTED:
-      fprintf(stderr, "PCM State : DISCONNECTED\n");
-      break;
-    default:
-      fprintf(stderr, "PCM State : ELSE\n");
-      break;
-  }
-}
-
-void showDevices() {
-  char** hints;
-  /* Enumerate sound devices */
-  int rc = snd_device_name_hint(-1, "pcm", (void***)&hints);
-  if (rc < 0) {
-    fprintf(stderr, "Error (at %s:%d) : %s\n",
-        __FILE__, __LINE__, snd_strerror(rc));
-  }
-
-  char** n = hints;
-  while (*n != NULL) {
-    char* name = snd_device_name_get_hint(*n, "NAME");
-    if (name != NULL && 0 != strcmp("null", name)) {
-      free(name);
-    }
-    n++;
-  }
-
-  snd_device_name_free_hint((void**)hints);
-}
-
-int main(int argc, char* argv[]) {
+int main(int argc, char** argv) {
   int rc;
   snd_pcm_t *handle;
   snd_pcm_hw_params_t *params;
@@ -82,10 +20,11 @@ int main(int argc, char* argv[]) {
   unsigned int channels = 1;
   unsigned int rate = 44100;
   unsigned int duration = 5;
+  snd_pcm_format_t format = SND_PCM_FORMAT_UNKNOWN;
   int showhelp = 0;
 
   int opt;
-  while ((opt = getopt(argc, argv, "hD:c:d:r:")) != -1) {
+  while ((opt = getopt(argc, argv, "hD:c:d:r:f:")) != -1) {
     switch (opt) {
       case 'h':
         showhelp = 1;
@@ -102,17 +41,23 @@ int main(int argc, char* argv[]) {
       case 'r':
         rate = atoi(optarg);
         break;
+      case 'f':
+        format = snd_pcm_format_value(optarg);
+        break;
       default: /* '?' */
         showhelp = 1;
         break;
     }
   }
+  
+  if (format == SND_PCM_FORMAT_UNKNOWN) {
+    format = SND_PCM_FORMAT_S16_LE;
+  }
 
   if (showhelp) {
     fprintf(stderr, "Usage: %s [-D device] [-c channels] "
-        "[-d duration] [-r rate]\n", argv[0]);
-    showDevices();
-    return 0;
+        "[-d duration] [-r rate] [-f format]\n", argv[0]);
+    exit(EXIT_SUCCESS);
   }
 
   /* Open PCM device for recording (capture). */
@@ -145,8 +90,8 @@ int main(int argc, char* argv[]) {
     snd_pcm_recover(handle, rc, 0);
   }
 
-  /* Signed 16-bit little-endian format */
-  rc = snd_pcm_hw_params_set_format(handle, params, SND_PCM_FORMAT_S16_LE);
+  /* set format */
+  rc = snd_pcm_hw_params_set_format(handle, params, format);
   if (rc < 0) {
     fprintf(stderr, "Error at %s:%d : %s\n", __FILE__, __LINE__, snd_strerror(rc));
     snd_pcm_recover(handle, rc, 0);
@@ -185,7 +130,6 @@ int main(int argc, char* argv[]) {
     snd_pcm_recover(handle, rc, 0);
   }
 
-  snd_pcm_format_t format;
   rc = snd_pcm_hw_params_get_format(params, &format);
   if (rc < 0) {
     fprintf(stderr, "Error at %s:%d : %s\n", __FILE__, __LINE__, snd_strerror(rc));
@@ -234,7 +178,6 @@ int main(int argc, char* argv[]) {
       fprintf(stderr, "Short write: wrote %d bytes\n", rc);
   }
 
-  printState(handle);
   rc = snd_pcm_close(handle);
   if (rc < 0) {
     fprintf(stderr, "Error (at %s:%d) : %s\n",
