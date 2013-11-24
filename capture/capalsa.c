@@ -9,7 +9,7 @@
 
 #include <alsa/asoundlib.h>
 
-int main(int argc, char* argv[]) {
+int main(int argc, char** argv) {
   int rc;
   snd_pcm_t *handle;
   snd_pcm_hw_params_t *params;
@@ -51,13 +51,13 @@ int main(int argc, char* argv[]) {
   }
   
   if (format == SND_PCM_FORMAT_UNKNOWN) {
-    format = SND_PCM_FORMAT_FLOAT_LE;
+    format = SND_PCM_FORMAT_S16_LE;
   }
 
   if (showhelp) {
     fprintf(stderr, "Usage: %s [-D device] [-c channels] "
-        "[-d duration] [-r rate]\n", argv[0]);
-    return 0;
+        "[-d duration] [-r rate] [-f format]\n", argv[0]);
+    exit(EXIT_SUCCESS);
   }
 
   /* Open PCM device for recording (capture). */
@@ -187,6 +187,6 @@ int main(int argc, char* argv[]) {
 
   free(buffer);
 
-  return 0;
+  exit(EXIT_SUCCESS);
 }
 
