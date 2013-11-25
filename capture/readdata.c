@@ -210,6 +210,11 @@ int main(int argc, char** argv) {
     printf("\n");
   }
 
+  for (c = 0; c < channels; c++) {
+    free(data[c]);
+  }
+  free(data);
+
   exit(EXIT_SUCCESS);
 }
 
