@@ -1,22 +1,18 @@
-// readdata.c
-// Read Raw PCM Data and convert to double arrays
+// utils.c
+// Implementation of utility functions
 //
 // Author : Weipeng He <heweipeng@gmail.com>
 // Copyright (c) 2013, All rights reserved.
 
+#include "utils.h"
+
 #include <assert.h>
 #include <stdint.h>
 
-// redefined ?
 // #define _BSD_SOURCE
 #include <endian.h>
 
-/* Use the newer ALSA API */
-#define ALSA_PCM_NEW_HW_PARAMS_API
-
-#include <alsa/asoundlib.h>
-
-double convToDouble(snd_pcm_format_t format, void* data) {
+double pcmToDouble(snd_pcm_format_t format, void* data) {
   int format_bits = snd_pcm_format_width(format);
   int bps = format_bits / 8; /* bytes per sample */
   int big_endian = snd_pcm_format_big_endian(format) == 1;
@@ -116,26 +112,26 @@ double convToDouble(snd_pcm_format_t format, void* data) {
 }
 
 unsigned long int readFile(FILE* file, unsigned long int count,
-    unsigned int channel, snd_pcm_format_t format,
+    unsigned int channels, snd_pcm_format_t format,
     double*** data) {
   int rc; // return code
 
   rc = snd_pcm_format_physical_width(format);
   if (rc < 0) {
     fprintf(stderr, "Error at %s:%d : %s\n", __FILE__, __LINE__, snd_strerror(rc));
-    return EXIT_FAILURE;
+    exit(EXIT_FAILURE);
   }
   size_t sampleSize = rc / 8; // sample count in bytes
 
   // Allocate space
-  *data = malloc(sizeof(double*) * channel);
+  *data = malloc(sizeof(double*) * channels);
   unsigned int c;
-  for (c = 0; c < channel; c++) {
+  for (c = 0; c < channels; c++) {
     (*data)[c] = malloc(sizeof(double) * sampleSize * count);
   }
 
   // Read data
-  size_t bufferSize = sampleSize * channel;
+  size_t bufferSize = sampleSize * channels;
   char* buffer = malloc(bufferSize);
   unsigned long int readCount = 0;
   for (readCount = 0; readCount < count; readCount++) {
@@ -143,78 +139,12 @@ unsigned long int readFile(FILE* file, unsigned long int count,
     if (rs < bufferSize) { // !NOTE : Ignore incomplete samples
       break;
     }
-    for (c = 0; c < channel; c++) {
-      (*data)[c][readCount] = convToDouble(format, buffer + (c * sampleSize));
+    for (c = 0; c < channels; c++) {
+      (*data)[c][readCount] = pcmToDouble(format, buffer + (c * sampleSize));
     }
   }
   free(buffer);
 
   return readCount;
-}
-
-int main(int argc, char** argv) {
-  int showhelp = 0;
-  unsigned int channels = 1;
-  snd_pcm_format_t format = SND_PCM_FORMAT_UNKNOWN;
-  unsigned long int count = 1;
-
-  int opt;
-  while ((opt = getopt(argc, argv, "hc:f:C:")) != -1) {
-    switch (opt) {
-      case 'h':
-        showhelp = 1;
-        break;
-      case 'c':
-        channels = atoi(optarg);
-        break;
-      case 'f':
-        format = snd_pcm_format_value(optarg);
-        break;
-      case 'C':
-        count = atol(optarg);
-        break;
-      default: /* '?' */
-        showhelp = 1;
-        break;
-    }
-  }
-
-  if (format == SND_PCM_FORMAT_UNKNOWN) {
-    fprintf(stderr, "Unknown format\n");
-    exit(EXIT_FAILURE);
-  }
-
-  if (showhelp || optind >= argc) {
-    fprintf(stderr, "Usage: %s [-c channels] [-f format] "
-        "[-C count] <file>\n", argv[0]);
-    exit(EXIT_SUCCESS);
-  }
-
-  FILE* input = fopen(argv[optind], "r");
-  if (input == NULL) {
-    fprintf(stderr, "Cannot Open File %s : %s\n", argv[optind], strerror(errno));
-    exit(EXIT_FAILURE);
-  }
-
-  double** data;
-
-  unsigned long int rc = readFile(input, count, channels, format, &data);
-  fprintf(stderr, "%lu samples read\n", rc);
-
-  unsigned int c;
-  unsigned long int i;
-  for (i = 0; i < rc; i++) {
-    for (c = 0; c < channels; c++) {
-      printf("%f\t", data[c][i]);
-    }
-    printf("\n");
-  }
-
-  for (c = 0; c < channels; c++) {
-    free(data[c]);
-  }
-  free(data);
-
-  exit(EXIT_SUCCESS);
 }
 
