@@ -26,6 +26,7 @@ double pcmToDouble(snd_pcm_format_t format, void* data);
  * Supported formats are U8, S8, U16_LE, U16_BE, S16_LE, S16_BE,
  * U32_LE, U32_BE, S32_LE, S32_BE, FLOAT_LE, FLOAT_BE,
  * FLOAT64_LE, FLOAT64_BE.
+ * Memory should be allocated to data before calling the function.
  *
  * @return 0 on seccuess, other if error occured.
  */

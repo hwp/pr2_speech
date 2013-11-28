@@ -12,13 +12,19 @@
 // #define _BSD_SOURCE
 #include <endian.h>
 
+int isFloat(snd_pcm_format_t format) {
+  return (format == SND_PCM_FORMAT_FLOAT_LE
+      || format == SND_PCM_FORMAT_FLOAT_BE
+      || format == SND_PCM_FORMAT_FLOAT64_LE
+      || format == SND_PCM_FORMAT_FLOAT64_BE);
+}
+
 double pcmToDouble(snd_pcm_format_t format, void* data) {
   int format_bits = snd_pcm_format_width(format);
   int bps = format_bits / 8; /* bytes per sample */
   int big_endian = snd_pcm_format_big_endian(format) == 1;
   int is_unsigned = snd_pcm_format_unsigned(format) == 1;
-  int is_float = (format == SND_PCM_FORMAT_FLOAT_LE ||
-      format == SND_PCM_FORMAT_FLOAT_BE);
+  int is_float = isFloat(format);
 
   double value = 0.0;
   double maxval = 1.0;
@@ -109,6 +115,115 @@ double pcmToDouble(snd_pcm_format_t format, void* data) {
   }
 
   return value;
+}
+
+int doubleToPCM(snd_pcm_format_t format, double value, void* data) {
+  int format_bits = snd_pcm_format_width(format);
+  int bps = format_bits / 8; /* bytes per sample */
+  int big_endian = snd_pcm_format_big_endian(format) == 1;
+  int is_unsigned = snd_pcm_format_unsigned(format) == 1;
+  int is_float = isFloat(format);
+
+  double maxval = 1.0;
+
+  if (bps == 1) {
+    int8_t im = INT8_MAX;
+    maxval = (double) im;
+    int8_t vc = (int8_t) (maxval * value);
+
+    if (is_unsigned) {
+      assert(format == SND_PCM_FORMAT_U8);
+      vc ^= 1U << (format_bits - 1);
+    }
+    else {
+      assert(format == SND_PCM_FORMAT_S8);
+    }
+
+    // no endian problem
+
+    int8_t* vp = (int8_t*) data;
+    *vp = vc;
+  }
+  else if (bps == 2) {
+    assert(!is_float);
+
+    int16_t im = INT16_MAX;
+    maxval = (double) im;
+    int16_t vcs = (int16_t) (maxval * value);
+    uint16_t vcu = *((uint16_t*) &vcs);
+
+    if (is_unsigned) {
+      vcu ^= 1U << (format_bits - 1);
+    }
+    else {
+      assert(snd_pcm_format_signed(format) == 1);
+    }
+
+    if (big_endian) {
+      vcu = htobe16(vcu);
+    }
+    else {
+      assert(snd_pcm_format_little_endian(format) == 1);
+      vcu = htole16(vcu);
+    }
+
+    uint16_t* vp = (uint16_t*) data;
+    *vp = vcu;
+  }
+  else if (bps == 4) {
+    uint32_t vcu;
+
+    if (!is_float) {
+      int32_t im = INT32_MAX;
+      maxval = (double) im;
+      int32_t vcs = (int32_t) (maxval * value);
+      vcu = *((uint32_t*) &vcs);
+
+      if (is_unsigned) {
+        vcu ^= 1U << (format_bits - 1);
+      }
+      else {
+        assert(snd_pcm_format_signed(format) == 1);
+      }
+    }
+    else {
+      float vcf = (float) value;
+      vcu = *((uint32_t*) &vcf);
+    }
+
+    if (big_endian) {
+      vcu = htobe32(vcu);
+    }
+    else {
+      assert(snd_pcm_format_little_endian(format) == 1);
+      vcu = htole32(vcu);
+    }
+
+    uint32_t* vp = (uint32_t*) data;
+    *vp = vcu;
+  }
+  else if (bps == 8) {
+    assert(is_float);
+    uint64_t vcu = *((uint64_t*) &value);
+
+    if (big_endian) {
+      vcu = be64toh(vcu);
+    }
+    else {
+      assert(snd_pcm_format_little_endian(format) == 1);
+      vcu = le64toh(vcu);
+    }
+
+    uint64_t* vp = (uint64_t*) data;
+    *vp = vcu;
+  }
+  else {
+    // bps == 3 ?? ignore
+    // TODO : fix it
+    assert(0);
+  }
+
+  return 0;
 }
 
 unsigned long int readFile(FILE* file, unsigned long int count,
