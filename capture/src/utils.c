@@ -263,3 +263,34 @@ unsigned long int readFile(FILE* file, unsigned long int count,
   return readCount;
 }
 
+unsigned long int writeFile(FILE* file, unsigned long int count,
+    unsigned int channels, snd_pcm_format_t format, double** data) {
+  int rc; // return code
+
+  rc = snd_pcm_format_physical_width(format);
+  if (rc < 0) {
+    fprintf(stderr, "Error at %s:%d : %s\n", __FILE__, __LINE__, snd_strerror(rc));
+    exit(EXIT_FAILURE);
+  }
+  size_t sampleSize = rc / 8; // sample count in bytes
+
+  // Write data
+  size_t bufferSize = sampleSize * channels;
+  char* buffer = malloc(bufferSize);
+  unsigned long int writeCount = 0;
+  unsigned int c;
+  for (writeCount = 0; writeCount < count; writeCount++) {
+    for (c = 0; c < channels; c++) {
+      doubleToPCM(format, data[c][writeCount], buffer + (c * sampleSize));
+    }
+
+    size_t rs = fwrite(buffer, 1, bufferSize, file);
+    if (rs < bufferSize) { // !NOTE : Ignore incomplete write 
+      break;
+    }
+  }
+  free(buffer);
+
+  return writeCount;
+}
+

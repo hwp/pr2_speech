@@ -39,5 +39,12 @@ int doubleToPCM(snd_pcm_format_t format, double value, void* data);
 unsigned long int readFile(FILE* file, unsigned long int count,
     unsigned int channels, snd_pcm_format_t format, double*** data);
 
+/**
+ * Convert double value data to pcm and write to file.
+ * @return number of samples write.
+ */
+unsigned long int writeFile(FILE* file, unsigned long int count,
+    unsigned int channels, snd_pcm_format_t format, double** data);
+
 #endif  // UTILS_H_
 
