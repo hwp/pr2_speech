@@ -68,6 +68,7 @@ int main(int argc, char** argv) {
     free(data[c]);
   }
   free(data);
+  fclose(input);
 
   exit(EXIT_SUCCESS);
 }
