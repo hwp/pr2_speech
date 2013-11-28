@@ -33,7 +33,7 @@ int main(int argc, char** argv) {
     }
   }
 
- if (showhelp || argc - optind < 2) {
+  if (showhelp || argc - optind < 2) {
     fprintf(stderr, "Usage: %s [-c channels] [-f fromFormat] "
         "[-t toFormat] <inputFile> <outputFile>\n", argv[0]);
     exit(EXIT_SUCCESS);
@@ -43,7 +43,7 @@ int main(int argc, char** argv) {
     fprintf(stderr, "Unknown format\n");
     exit(EXIT_FAILURE);
   }
- 
+
   FILE* input = fopen(argv[optind], "r");
   if (input == NULL) {
     fprintf(stderr, "Cannot Open File %s : %s\n", argv[optind], strerror(errno));
@@ -65,7 +65,7 @@ int main(int argc, char** argv) {
     rc = readFile(input, bsize, channels, formatf, &data);
     rc = writeFile(output, rc, channels, formatt, data);
     count += rc;
-    
+
     unsigned int c;
     for (c = 0; c < channels; c++) {
       free(data[c]);
