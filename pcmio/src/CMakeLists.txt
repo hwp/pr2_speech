@@ -10,3 +10,6 @@ target_link_libraries(readdata asound)
 add_executable(convert convert.c utils.c)
 target_link_libraries(convert asound)
 
+add_executable(audioica audioica.cpp utils.c)
+target_link_libraries(audioica asound itpp)
+
