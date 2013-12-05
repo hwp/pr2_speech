@@ -263,6 +263,14 @@ unsigned long int readFile(FILE* file, unsigned long int count,
   return readCount;
 }
 
+void freeData(double** data, unsigned int channels) {
+  int i;
+  for (i = 0; i < channels; i++) {
+    free(data[i]);
+  }
+  free(data);
+}
+
 unsigned long int writeFile(FILE* file, unsigned long int count,
     unsigned int channels, snd_pcm_format_t format, double** data) {
   int rc; // return code

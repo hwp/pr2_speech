@@ -64,10 +64,7 @@ int main(int argc, char** argv) {
     printf("\n");
   }
 
-  for (c = 0; c < channels; c++) {
-    free(data[c]);
-  }
-  free(data);
+  freeData(data, channels);
   fclose(input);
 
   exit(EXIT_SUCCESS);

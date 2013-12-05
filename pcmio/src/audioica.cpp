@@ -93,12 +93,7 @@ int main(int argc, char** argv) {
   count = writeFile(output, count, channels, format, data);
 
   fclose(output);
-
-  // TODO : free data api
-  for (int i = 0; i < channels; i++) {
-    free(data[i]);
-  }
-  free(data);
+  freeData(data, channels);
 
   exit(EXIT_SUCCESS);
 }

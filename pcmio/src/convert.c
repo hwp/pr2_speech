@@ -66,11 +66,7 @@ int main(int argc, char** argv) {
     rc = writeFile(output, rc, channels, formatt, data);
     count += rc;
 
-    unsigned int c;
-    for (c = 0; c < channels; c++) {
-      free(data[c]);
-    }
-    free(data);
+    freeData(data, channels);
   }
   fprintf(stderr, "%lu samples converted\n", count);
 
