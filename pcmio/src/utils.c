@@ -118,6 +118,8 @@ double pcmToDouble(snd_pcm_format_t format, void* data) {
 }
 
 int doubleToPCM(snd_pcm_format_t format, double value, void* data) {
+  assert(value <= 1.0 && value >= -1.0);
+
   int format_bits = snd_pcm_format_width(format);
   int bps = format_bits / 8; /* bytes per sample */
   int big_endian = snd_pcm_format_big_endian(format) == 1;

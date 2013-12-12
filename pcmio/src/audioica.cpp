@@ -8,9 +8,12 @@ extern "C" {
   #include "utils.h"
 }
 
+#include <itpp/itbase.h>
 #include <itpp/signal/fastica.h>
 
+using itpp::abs;
 using itpp::mat;
+using itpp::max;
 using itpp::Fast_ICA;
 
 int main(int argc, char** argv) {
@@ -83,6 +86,7 @@ int main(int argc, char** argv) {
   fastica.set_approach(FICA_APPROACH_DEFL);
   fastica.separate();
   mat ics = fastica.get_independent_components();
+  ics /= max(max(abs(ics)));
 
   for (int i = 0; i < channels; i++) {
     for (int j = 0; j < count; j++) {
