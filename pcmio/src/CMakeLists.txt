@@ -17,5 +17,6 @@ add_executable(chanfilter chanfilter.c utils.c)
 target_link_libraries(chanfilter ${ALSA_LIBRARIES})
 
 add_executable(gsttest gsttest.c)
-target_link_libraries(gsttest ${GSTREAMER_LIBRARIES})
+target_link_libraries(gsttest
+  ${GSTREAMER_LIBRARIES} ${GLIB_LIBRARIES} ${GLIB_GOBJECT_LIBRARIES})
 

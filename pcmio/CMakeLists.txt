@@ -16,7 +16,7 @@ include_directories(${ITPP_INCLUDE_DIRS})
 find_package(GStreamer REQUIRED)
 include_directories(${GSTREAMER_INCLUDE_DIRS})
 
-find_package(GLIB REQUIRED)
+find_package(GLIB COMPONENTS gobject REQUIRED)
 include_directories(${GLIB_INCLUDE_DIRS})
 
 add_subdirectory(src) 

@@ -1,27 +1,27 @@
-
-#include <stdio.h>
 #include <gst/gst.h>
 
 int
 main (int   argc,
       char *argv[])
 {
-  const gchar *nano_str;
-  guint major, minor, micro, nano;
+  GstElementFactory *factory;
 
+  /* init GStreamer */
   gst_init (&argc, &argv);
 
-  gst_version (&major, &minor, &micro, &nano);
+  /* get factory */
+  factory = gst_element_factory_find ("fakesrc");
+  if (!factory) {
+    g_print ("You don't have the 'fakesrc' element installed!\n");
+    return -1;
+  }
 
-  if (nano == 1)
-    nano_str = "(CVS)";
-  else if (nano == 2)
-    nano_str = "(Prerelease)";
-  else
-    nano_str = "";
-
-  printf ("This program is linked against GStreamer %d.%d.%d %s\n",
-          major, minor, micro, nano_str);
+  /* display information */
+  g_print ("The '%s' element is a member of the category %s.\n"
+           "Description: %s\n",
+           gst_plugin_feature_get_name (GST_PLUGIN_FEATURE (factory)),
+           gst_element_factory_get_metadata (factory, GST_ELEMENT_METADATA_KLASS),
+           gst_element_factory_get_metadata (factory, GST_ELEMENT_METADATA_DESCRIPTION));
 
   return 0;
 }
