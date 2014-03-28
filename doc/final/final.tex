@@ -5,6 +5,11 @@
 
 \usepackage{tikz}
 
+\usepackage{graphicx}
+\graphicspath{{./fig/}}
+
+\usepackage[svgpath=fig/]{svg}
+
 \begin{document}
 \title{A Speech Command System on PR2}
 \author{Weipeng He, Natalia Orlova}
@@ -21,7 +26,6 @@
 \chapter{Introduction}
 
 \chapter{Speech Processing Basics}
-\section{Short Time Fourier Transform}
 
 \section{Implementation of Audio I/O System}
 Although there are plenty of literatures about the theories of audio processing, there rarely are detailed documents on how the systems are implemented. To close the gap between theories and implementation, in this section, we would like to address the basic concepts of audio programming as well as details of the implementation of basic audio input and output in our system.
@@ -36,6 +40,13 @@ To process an audio signal, first of all, we need to know how the signal is repr
 For sampling, we take the values of the continuous signal using a \textit{sampler} at $T_s$ time intervals: \[ x_s[n] = x(n T_c) \in \mathbb{R},~ n \in \mathbb{Z} \] Here, $T_s$ is called the \textit{sampling period}, and $ f_s = \frac{1}{T_c} $ is called the \textit{sampling frequency}.
 
 After sampling, the \textit{A/D converter} converts the real values to a limited set of values, which can be represented by binary data. In digital audio, \textit{Pulse-code modulation} (PCM) is the most common method for this quantization process. 
+
+\begin{figure}[htbp]
+  \centering
+  %\input{fig/eg1}
+  \caption{Sampling and Quantization of Audio Signal.}
+  \label{fig:sqas}
+\end{figure}
 
 PCM has several quantization methods, which includes Linear PCM, A-law algorithm or $\mu$-law algorithm. Although different algorithms exist, PCM sometimes refer to Linear PCM by default as it is the most popular. Linear PCM quantize each sample using linearly uniform levels. In other words, all adjacent levels have the same difference in sound amplitude. The number of levels depends on the bit depth of each code.
 
@@ -73,8 +84,94 @@ Besides the aforementioned parameters for audio representation (sampling rate, n
 
 % \subsection{Implementation using ALSA}
 
-\chapter{Sound Source Separation}
+\section{Short Time Fourier Transform}
+In previous section, we introduced the basics about speech signal in time domain. However, it can be difficult to analyze the time-domain signal. By using Fourier transform, we can change the signal to frequency domain and benefit from its several properties. Still, the problem for Fourier transform is that the speech signal is quasi-stationary (slowly varying over time) rather than stationary. Which means frequency-domain signal cannot specify the local information at a specific time. Therefore, the \textit{Short Time Fourier Transform} (STFT) is applied, in order to modeling the signal in both time and frequency domains.
 
+\subsection{Window Function}
+In STFT, the idea of ``short time'' is realized by applying a window function to the original signal at a specific time. Window function is zero-centered and non-zero in only a short interval. Typical window functions include: Hann window, Hamming window\cite{heinzel_spectrum_2002}. The Hann window (Figure \ref{fig:hann}) is defined as:
+\[ w(n) = 0.5 (1 - \cos(\frac{2\pi n}{N-1})) \]
+and Hamming window (Figure \ref{fig:hamming}) is defined as:
+\[ w(n) = \alpha - \beta \cos(\frac{2\pi n}{N-1}) \]
+where $\alpha = 0.54, \beta = 1 - \alpha = 0.46$ and $N$ is the window size.
+
+\begin{figure}[htbp]
+  \centering
+  {\small
+  \includesvg[pretex=\footnotesize,width=.8\textwidth]{hann}
+  }
+  \caption[Hann Window]{Hann Window.}
+  \label{fig:hann}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  {\small
+  \includesvg[pretex=\footnotesize,width=.8\textwidth]{hamming}
+  }
+  \caption[Hamming Window]{Hamming Window.}
+  \label{fig:hamming}
+\end{figure}
+
+\subsection{Continuous STFT and its Inverse}
+Continuous STFT is simply traditional Fourier transform applied to windowed signal. Mathematically, continuous STFT is expressed as:
+\[ X(\tau, \omega) = \mathcal{F}(x(t)w(t-\tau)) =  \int_{-\infty}^{\infty} x(t)w(t-\tau)e^{-j\omega t}\mathrm{d}t \]
+where $\mathcal{F}$ is the Fourier transform, $x(t)$ is the time-domain signal to be transfered and $w(t)$ is the window function. For a fixed time $\tau$, $x(t)w(t-\tau)$ is just the original signal at local time around $\tau$ and masked by the window function. Thus, $X(\tau, \omega)$ represents the frequency attributes at that local time. We can also notice that the transform $X(\tau, \omega)$ depends on both time $\tau$ and frequency $\omega$. Therefore, we say that this kind of representation the time-frequency representation.
+
+Like Fourier transform, the continuous STFT is invertible. Now we show how the inverse transform is derived. First, we assume the window function is scaled to have $\int_{-\infty}^{\infty} w(t) \mathrm{d}t = 1$. Thus:
+\[
+  x(t) = x(t) \int_{-\infty}^{\infty} w(t-\tau) \mathrm{d}\tau = \int_{-\infty}^{\infty} x(t)w(t-\tau) \mathrm{d}\tau
+\]
+The integrand $x(t)w(t-\tau)$ is actually the original signal of $X(\tau, \omega)$ before Fourier transform with $\tau$ fixed. Therefore:
+\[ x(t)w(t-\tau) = \mathcal{F}^{-1}(X(\tau, \omega)) = \frac{1}{2\pi} \int_{-\infty}^{\infty} X(\tau, \omega) e^{j\omega t} \mathrm{d}\omega \]
+Combining the two equations above, we have the inverse of the transform:
+\[ x(t) = \frac{1}{2\pi} \int_{-\infty}^{\infty} \int_{-\infty}^{\infty} X(\tau, \omega) e^{j\omega t} \mathrm{d}\omega \mathrm{d}\tau \]
+
+\subsection{Discrete STFT}
+Because we don't have continuous speech signal, we shall extend the STFT to discrete situation\footnote{Most time, without specification, STFT means discrete STFT by default.}. Like the discrete Fourier transform (DFT), discrete STFT is defined as:
+\[ X(n, k) = \sum_{m = -\infty}^{\infty} x[m]w[m-n]e^{-j \frac{2\pi k}{N} m} \]
+where $x$ is the signal, $w$ is the window function, $n$ is the index of time, $k$ is the index of frequency bin, and $N$ is the number of frequency bins. Practically, most applications of STFT use Fast Fourier Transform to calculate. Thus, the $N$ is also equal to the window size and is an exponential of 2.
+
+The magnitude squared of the STFT yields the spectrogram of the function:
+\[ \text{Spectrogram}(n, k) = \left|X(n,k)\right|^2 \]
+From the spectrogram we can clearly visualize the different frequency components of a sound and its variation over time. In fact, most application for extracting audio feature use only the magnitude information.
+
+Note that because the time-domain signal is real, at any time, the result of the DFT has the following properties:
+\begin{itemize}
+  \item $X(n,0)$ and $X[n, \frac{N}{2}]$ are real;
+  \item $X(n,k) = X^*(n,N-k), k \neq 0, \frac{N}{2}$, here $^*$ is the complex conjugate.
+\end{itemize}
+Therefore, only the first half (index from $0$ to $\frac{N}{2}$) of the DFT contains information, while the other half are redundant. In fact, only the first half is plotted in the spectrogram. From Fourier analysis theories, we know that the $k$th frequency bin represents the component at frequency $\frac{kf_s}{N}$, with $f_s$ is the sampling rate. The component with the highest frequency is the bin with index $\frac{N}{2}$ and its frequency is $\frac{N}{2} \times \frac{f_s}{N} = \frac{f_s}{2}$. This is consistent with the Nyquist frequency.
+
+One shortcoming for STFT is that the frequency resolution and time resolution is mutually limited. This limit is referred as \textit{Gabor limit}. The difference of two consecutive frequency bin is $\frac{f_s}{N}$. And, one STFT is a DFT of a neighborhood of $N$ samples, e.g. $N * \frac{1}{f_s}$ time interval. That means the time resolution is $\frac{N}{f_s}$. Therefore, the product of the two resolutions, $\frac{f_s}{N} \times \frac{N}{f_s} = 1$, is constant. Selecting the windows size involves trade-off between the frequency resolution and time resolution. With large window size, we can have good frequency resolution, while it can be difficult to catch the change in a short time. Vice versa, with a small windows size, we can have high time resolution. However, the frequency resolution would be low.
+
+\subsection{Inverse Discrete STFT}
+Because DFT is invertible, calculating the inverse of STFT can be quite direct. For any $n$, we can find $m$, such that $w[n-m] \neq 0$. We have:
+\[ x[n]w[n-m] = \mathcal{F}^{-1}(X(m,k))[n] \]
+where $\mathcal{F}^{-1}$ is the inverse DFT. Thus,
+\begin{equation}
+  x[n] =  \frac{\mathcal{F}^{-1}(X(m,k))[n]}{w[n-m]} = \frac{\frac{1}{N}\sum_{k=0}^{N-1} X(m,k)e^{j \frac{2\pi k}{N} n}}{w[n-m]}
+  \label{eq:naiveinv}
+\end{equation}
+
+We can clearly see that there could be multiple $m$, which yields the same result. In other words, the STFT is redundant. Therefore, except for calculating every $n$, we jump a interval between calculation of DFT. Which means, we use a shifting window, that shift more than 1 sample a time. With the \textit{shift size} $L$, we calculate the STFT at time $0$, $L$, $2L$, \dots. Thus, we can have windows that covers $[0, N-1]$, $[L, L+N-1]$, $[2L, 2L+N-1]$, \dots. In order to cover all samples, we need $L<N$, which means we have overlapping windows. Normally, we choose $L = \frac{N}{2}$ or $L = \frac{N}{4}$.
+
+Although Equation \ref{eq:naiveinv} can still be used for calculating the inverse, it is not a good practice. It is because the $w[n-m]$ in the denominator can be very small, which amplifies small perturbation in the STFT. One of the algorithms to solve this issue is called the \textit{Overlap-add} (OLA) method.
+
+The idea of OLA is simply calculating the inverse of all window frames and take the weighted average of them. The inverse is calculated as:
+\begin{equation}
+  x[n] = \frac{\sum_{p=-\infty}^{\infty} \mathcal{F}^{-1}(X(pL,k))[n]}{\sum_{p=-\infty}^{\infty} w[n-pL]}
+  = \frac{\sum_{p=-\infty}^{\infty} \sum_{k=0}^{N-1} X(pL,k)e^{j \frac{2\pi k}{N} n}}{N\sum_{p=-\infty}^{\infty} w[n-pL]}
+\end{equation}
+
+Under some constraint, $\sum_{p=-\infty}^{\infty} w[n-pL] = W_0$ is constant. Then the inverse STFT is:
+\begin{equation}
+  x[n] = \frac{1}{NW_0} \sum_{p=-\infty}^{\infty} \sum_{k=0}^{N-1} X(pL,k)e^{j \frac{2\pi k}{N} n} 
+  \label{eq:olainv}
+\end{equation}
+
+
+
+\chapter{Sound Source Separation}
 
 \chapter{Noise Reduction Techniques}
 
