@@ -2,7 +2,8 @@ TEX    = latexmk -pdf -pdflatex="pdflatex -interaction=batchmode --shell-escape"
 PLOT   = gnuplot -e 'set term latex'
 
 PAPER  = final
-BIBS   = project.bib
+BIBS   = project.bib mybib.bib
+LISTS  = nav_commands.lm
 FIGDIR = fig
 PLOTS  = samquan
 
@@ -11,9 +12,10 @@ PLOTP  = $(foreach p, $(PLOTS), $(FIGDIR)/$(p).tex)
 $(FIGDIR)/%.tex : $(FIGDIR)/%.gp
 	$(PLOT) $< > $@
 
-all : $(PAPER).pdf
+.PHONY : pdf 
+pdf : $(PAPER).pdf
 
-$(PAPER).pdf : $(PAPER).tex $(PLOTP)
+$(PAPER).pdf : $(PAPER).tex $(PLOTP) $(BIBS) $(LISTS)
 	$(TEX) $(PAPER)
 
 .PHONY : clean
