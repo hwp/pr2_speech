@@ -125,14 +125,14 @@ For sampling, we take the values of the continuous signal using a \textit{sample
 
 After sampling, the \textit{A/D converter} converts the real values to a limited set of values, which can be represented by binary data. In digital audio, \textit{Pulse-code modulation} (PCM) is the most common method for this quantization process. 
 
+PCM has several quantization methods, which includes Linear PCM, A-law algorithm or $\mu$-law algorithm. Although different algorithms exist, PCM sometimes refer to Linear PCM by default as it is the most popular. Linear PCM quantize each sample using linearly uniform levels. In other words, all adjacent levels have the same difference in sound amplitude. The number of levels depends on the bit depth of each code. Figure \ref{fig:pcm} shows the sampling and quantization process using a 4-bit Linear PCM.
+
 \begin{figure}[htbp]
   \centering
-  \input{fig/samquan}
-  \caption{Sampling and Quantization of Audio Signal.}
-  \label{fig:sqas}
+  \includesvg[pretex=\footnotesize,width=.6\textwidth]{pcm}
+  \caption{Sampling and quantization process of a sine wave usineg a 4-bit Linear PCM. First, the sine wave (red curve) is sampled at discrete time (vertical lines). After that the value is rounded to the nearest possible value (blue dots). The number of possible values (horizontal lines) are $2^4=16$, and consecutive values have the same difference.}
+  \label{fig:pcm}
 \end{figure}
-
-PCM has several quantization methods, which includes Linear PCM, A-law algorithm or $\mu$-law algorithm. Although different algorithms exist, PCM sometimes refer to Linear PCM by default as it is the most popular. Linear PCM quantize each sample using linearly uniform levels. In other words, all adjacent levels have the same difference in sound amplitude. The number of levels depends on the bit depth of each code.
 
 Within each quantization method, different encoding method, e.g. \textit{format}, can be chosen. These formats are named according to the bit depth, endianness, float/integer and signed/unsigned that they use. For example, a format can be 32 bits signed integer with little endian. Some applications and libraries, such as aplay, ALSA, gstreamer, use a short name for each format. As for the example format, the name is ``\texttt{S32\_LE}''. The structure of the format name is shown in Figure \ref{fig:pcmname}. Other common formats includes \texttt{S8}, \texttt{U8}, \texttt{S16\_LE}, \texttt{F32\_LE}, \texttt{F64\_LE}, etc.
 
@@ -180,18 +180,14 @@ where $\alpha = 0.54, \beta = 1 - \alpha = 0.46$ and $N$ is the window size.
 
 \begin{figure}[htbp]
   \centering
-  {\small
   \includesvg[pretex=\footnotesize,width=.8\textwidth]{hann}
-  }
   \caption[Hann Window]{Hann Window.}
   \label{fig:hann}
 \end{figure}
 
 \begin{figure}[htbp]
   \centering
-  {\small
   \includesvg[pretex=\footnotesize,width=.8\textwidth]{hamming}
-  }
   \caption[Hamming Window]{Hamming Window.}
   \label{fig:hamming}
 \end{figure}
@@ -237,7 +233,14 @@ where $\mathcal{F}^{-1}$ is the inverse DFT. Thus,
   \label{eq:naiveinv}
 \end{equation}
 
-We can clearly see that there could be multiple $m$, which yields the same result. In other words, the STFT is redundant. Therefore, except for calculating every $n$, we jump a interval between calculation of DFT. Which means, we use a shifting window, that shift more than 1 sample a time. With the \textit{shift size} $L$, we calculate the STFT at time $0$, $L$, $2L$, \dots. Thus, we can have windows that covers $[0, N-1]$, $[L, L+N-1]$, $[2L, 2L+N-1]$, \dots. In order to cover all samples, we need $L<N$, which means we have overlapping windows. Normally, we choose $L = \frac{N}{2}$ or $L = \frac{N}{4}$.
+We can clearly see that there could be multiple $m$, which yields the same result. In other words, the STFT is redundant. Therefore, except for calculating every $n$, we jump a interval between calculation of DFT. Which means, we use a shifting window, that shift more than 1 sample a time. With the \textit{shift size} $L$, we calculate the STFT at time $0$, $L$, $2L$, \dots. Thus, we can have windows that covers $[0, N-1]$, $[L, L+N-1]$, $[2L, 2L+N-1]$, \dots. In order to cover all samples, we need $L<N$, which means we have overlapping windows. Normally, we choose $L = \frac{N}{2}$ or $L = \frac{N}{4}$. Figure \ref{fig:window} shows two situations. In the first figure, where shift size is half of the window size, we can see that every sample is covered by at least one window. However, in the second figure, where the shift size if large than window size, there is intervals between consecutive windows. The samples in such intervals cannot be inversed, because whatever their values are, after windowing, their value will be zero. 
+
+\begin{figure}[thbp]
+  \centering
+  \includesvg[pretex=\footnotesize,width=.6\textwidth]{window}
+  \caption{Shifting Window (size $N$) with different Shift Size ($L$).}
+  \label{fig:window}
+\end{figure}
 
 Although Equation \ref{eq:naiveinv} can still be used for calculating the inverse, it is not a good practice. It is because the $w[n-m]$ in the denominator can be very small, which amplifies small perturbation in the STFT. One of the algorithms to solve this issue is called the \textit{Overlap-add} (OLA) method.
 
@@ -252,6 +255,8 @@ Under some constraint, $\sum_{p=-\infty}^{\infty} w[n-pL] = W_0$ is constant. Th
   x[n] = \frac{1}{NW_0} \sum_{p=-\infty}^{\infty} \sum_{k=0}^{N-1} X(pL,k)e^{j \frac{2\pi k}{N} n} 
   \label{eq:olainv}
 \end{equation}
+
+Now, we have shown that OLA can be used for calculating the inverse of STFT.
 
 \chapter {Architecture of Speech Recognition}
 \label {sec:architecture}
