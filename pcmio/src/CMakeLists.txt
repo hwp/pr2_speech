@@ -20,3 +20,5 @@ add_executable(gsttest gsttest.c)
 target_link_libraries(gsttest
   ${GSTREAMER_LIBRARIES} ${GLIB_LIBRARIES} ${GLIB_GOBJECT_LIBRARIES})
 
+add_library(myfilter SHARED gstmyfilter.c)
+
