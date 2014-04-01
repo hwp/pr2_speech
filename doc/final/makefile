@@ -5,7 +5,7 @@ PAPER  = final
 BIBS   = project.bib mybib.bib
 LISTS  = nav_commands.lm
 FIGDIR = fig
-PLOTS  = window 
+PLOTS  = window spec64 spec256 spec1024
 
 PLOTP  = $(foreach p, $(PLOTS), $(FIGDIR)/$(p).svg)
 

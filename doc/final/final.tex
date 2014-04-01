@@ -10,6 +10,7 @@
 \usepackage{tikz}
 \usepackage{graphicx}
 \graphicspath{{./fig/}}
+\usepackage{subcaption}
 \usepackage[svgpath=fig/]{svg}
 
 \usepackage{listings}
@@ -110,13 +111,12 @@ speech recognition.
 
 
 \chapter{Speech Processing Basics}
+In this chapter we will introduce the very basic knowledge about speech signal processing, including the concepts and use of digital audio signal and the basic forms of representation of audio signal.
 
-\section{Implementation of Audio I/O System}
-Although there are plenty of literatures about the theories of audio processing, there rarely are detailed documents on how the systems are implemented. To close the gap between theories and implementation, in this section, we would like to address the basic concepts of audio programming as well as details of the implementation of basic audio input and output in our system.
+\section{Digital Audio Processing}
+Although there are plenty of literatures about the theories of audio processing, there rarely are detailed documents on how the systems are implemented. Theories of audio processing are always seemed to be neat and appealing. However, when it comes to writing a program to realize an algorithm, much more ``dirty'' works will be involved. These extra works are largely due to handling of hardware status and numerical computing, which are sometimes neglected in theories.
 
-Theories of audio processing are always seemed to be neat and appealing. However, when it comes to writing a program to realize an algorithm, much more ``dirty'' works will be involved. These extra works are largely due to handling of hardware status and numerical computing, which are sometimes neglected in theories.
-
-In this section, we will first introduce the basic concepts of digital audio signal processing. Afterward, we will show how to implement a minimal audio recording program using the Advanced Linux Sound Architecture (ALSA).
+In this section, we will first introduce the basic concepts of digital audio signal processing. Afterwards, we will introduce the library used for audio I/O, which is the Advanced Linux Sound Architecture (ALSA).
 
 \subsection{Sampling and PCM}
 To process an audio signal, first of all, we need to know how the signal is represented. Ideally, the audio signal is just amplitudes over time (time-domain signal), namely $ x(t) \in \mathbb{R},~ t \in \mathbb{R} $. However, practically, we need to represent the signal discretely. Thus, discretization on both time and amplitude (\textit{sampling} and \textit{quantization}, respectively) should be applied. As the result, the signal is represented using a sequence of quantized values $x_n$.
@@ -165,8 +165,6 @@ To summarize, an audio recording can be represented by binary data using PCM. To
 Advanced Linux Sound Architecture (ALSA) is the software framework that provides API for sound device drivers as part of the linux kernel. The API includes configuration of the hardware and write/read audio data.
 
 Besides the aforementioned parameters for audio representation (sampling rate, number of channels and PCM format), some other parameters regarding the hardware buffer are also need to be configured. These parameters are period size and buffer size. As it could be very costly for CPU to fetch the data one sample at a time, normally there is a hardware interrupt every interval. The number of frames that is in this interval is called the \textit{period size}. These data are stored in a ring buffer, and its size if called \textit{buffer size}. Usually the buffer size is twice as the period size. However, it can sometimes be up to 8 times of that.
-
-% \subsection{Implementation using ALSA}
 
 \section{Short Time Fourier Transform}
 In previous section, we introduced the basics about speech signal in time domain. However, it can be difficult to analyze the time-domain signal. By using Fourier transform, we can change the signal to frequency domain and benefit from its several properties. Still, the problem for Fourier transform is that the speech signal is quasi-stationary (slowly varying over time) rather than stationary. Which means frequency-domain signal cannot specify the local information at a specific time. Therefore, the \textit{Short Time Fourier Transform} (STFT) is applied, in order to modeling the signal in both time and frequency domains.
@@ -222,7 +220,31 @@ Note that because the time-domain signal is real, at any time, the result of the
 \end{itemize}
 Therefore, only the first half (index from $0$ to $\frac{N}{2}$) of the DFT contains information, while the other half are redundant. In fact, only the first half is plotted in the spectrogram. From Fourier analysis theories, we know that the $k$th frequency bin represents the component at frequency $\frac{kf_s}{N}$, with $f_s$ is the sampling rate. The component with the highest frequency is the bin with index $\frac{N}{2}$ and its frequency is $\frac{N}{2} \times \frac{f_s}{N} = \frac{f_s}{2}$. This is consistent with the Nyquist frequency.
 
-One shortcoming for STFT is that the frequency resolution and time resolution is mutually limited. This limit is referred as \textit{Gabor limit}. The difference of two consecutive frequency bin is $\frac{f_s}{N}$. And, one STFT is a DFT of a neighborhood of $N$ samples, e.g. $N * \frac{1}{f_s}$ time interval. That means the time resolution is $\frac{N}{f_s}$. Therefore, the product of the two resolutions, $\frac{f_s}{N} \times \frac{N}{f_s} = 1$, is constant. Selecting the windows size involves trade-off between the frequency resolution and time resolution. With large window size, we can have good frequency resolution, while it can be difficult to catch the change in a short time. Vice versa, with a small windows size, we can have high time resolution. However, the frequency resolution would be low.
+\begin{figure}[thbp]
+  \centering
+  \begin{subfigure}[b]{.8\textwidth}
+    \includesvg[pretex=\footnotesize,width=\textwidth]{spec1024}
+    \caption{$N=1024$}
+    \label{fig:spec1024}
+  \end{subfigure}
+
+  \begin{subfigure}[b]{.8\textwidth}
+    \includesvg[pretex=\footnotesize,width=\textwidth]{spec256}
+    \caption{$N=256$}
+    \label{fig:spec256}
+  \end{subfigure}
+
+  \begin{subfigure}[b]{.8\textwidth}
+    \includesvg[pretex=\footnotesize,width=\textwidth]{spec64}
+    \caption{$N=64$}
+    \label{fig:spec64}
+  \end{subfigure}
+
+  \caption{Spectrum of audio ``Hello World'' with different window sizes($N$). The audio file is sampled at $8000Hz$. STFT is calculated with a shift size of half window size.}
+  \label{fig:spec}
+\end{figure}
+
+One shortcoming for STFT is that the frequency resolution and time resolution is mutually limited. This limit is referred as \textit{Gabor limit}. The difference of two consecutive frequency bin is $\frac{f_s}{N}$. And, one STFT is a DFT of a neighborhood of $N$ samples, e.g. $N * \frac{1}{f_s}$ time interval. That means the time resolution is $\frac{N}{f_s}$. Therefore, the product of the two resolutions, $\frac{f_s}{N} \times \frac{N}{f_s} = 1$, is constant. Selecting the windows size involves trade-off between the frequency resolution and time resolution. With large window size, we can have good frequency resolution, while it can be difficult to catch the change in a short time. Vice versa, with a small windows size, we can have high time resolution. However, the frequency resolution would be low. Figure \ref{fig:spec} illustrates these difference.
 
 \subsection{Inverse Discrete STFT}
 Because DFT is invertible, calculating the inverse of STFT can be quite direct. For any $n$, we can find $m$, such that $w[n-m] \neq 0$. We have:
@@ -256,7 +278,7 @@ Under some constraint, $\sum_{p=-\infty}^{\infty} w[n-pL] = W_0$ is constant. Th
   \label{eq:olainv}
 \end{equation}
 
-Now, we have shown that OLA can be used for calculating the inverse of STFT.
+To summarize, STFT give us a solid way to represent a audio signal in time-frequency domain. It is invertible, which allows us to manipulate or modify the signal in time-frequency domain and recover it to the time domain. To calculate a STFT, we need to specify the window function, window size and shift size.
 
 \chapter {Architecture of Speech Recognition}
 \label {sec:architecture}
@@ -697,7 +719,6 @@ Total words & S & D & I  & WER\\ \hline
 \label {table:WER}
 \end {center}  
 \end {table} 
-
  
 The results of the executed tests are presented in the table ~\ref{table:WER}.
 As it can be seen from the above table most number of errors belong to the 
