@@ -176,8 +176,56 @@
 	url = {http://helio.estec.esa.int/SP/LISAPATHFINDER/docs/Data_Analysis/GH_FFT.pdf},
 	urldate = {2014-03-26},
 	institution = {Max Planck Institute},
-	author = {Heinzel, Gerhard and Rüdiger, A. and Schilling, Roland and Hannover, Teilinstitut},
+	author = {Heinzel, Gerhard and Rüdiger, A. and Schilling, Roland},
 	year = {2002},
 	pages = {122},
 	file = {GH_FFT.pdf:/home/hwp/.mozilla/firefox/1pw129hc.default-1394317684004/zotero/storage/B6IB6R5W/GH_FFT.pdf:application/pdf}
+}
+
+@article{boll_suppression_1979,
+	title = {Suppression of acoustic noise in speech using spectral subtraction},
+	volume = {27},
+	url = {http://ieeexplore.ieee.org/xpls/abs_all.jsp?arnumber=1163209},
+	number = {2},
+	urldate = {2014-04-01},
+	journal = {Acoustics, Speech and Signal Processing, {IEEE} Transactions on},
+	author = {Boll, Steven},
+	year = {1979},
+	pages = {113–120},
+	file = {01163209.pdf:/home/hwp/.mozilla/firefox/1pw129hc.default-1394317684004/zotero/storage/4DQ2WVMH/01163209.pdf:application/pdf}
+}
+
+@phdthesis{ince_ego_2011,
+	title = {Ego Noise Estimation for Robot Audition},
+	abstract = {Robots should listen to their surrounding world by the microphones embedded in their bodies to recognize and understand the auditory environment. This artificial listening capability called robot audition is an important function to understand the surrounding auditory world including sounds such as human voices, music, and other environmental sounds. Robot audition can be improved by incorporating another modality, robot motion, so that the framework is extended to active robot audition. In that sense, active audition can be considered as the first step towards endowing the robot with intelligent behavior. It provides the robot with a processing architecture that will allow it to learn and reason about how to behave in response to complex acoustic environments and conditions. The most important problem encountered in the active audition domain is ego noise, which can be described as the robot’s own noise generated during a motion of the robot. However, it cannot be solved effectively with conventional methods proposed in other signal processing domains. The basic problem with ego noise, like all types of noise in a robot audition system, is that it causes the Signal-to-Noise Ratio ({SNR)} to drop and it contaminates the spectrum of the recorded signal so that it is almost impossible to perform the fundamental applications of robot audition, such as Sound Source Localiza- tion ({SSL)}, Sound Source Separation ({SSS)} and Automatic Speech Recognition ({ASR)}, accurately. Because the complexity of the ego noise is enhanced by the number of motors in action, the negative effects of ego noise are even more severe for a moving robot with many degrees of freedom. This thesis addresses the estimation problem of the ego noise of a robot in order to suppress it for various tasks. The aim of this thesis is to establish a real-time and online ego noise estimation system. To develop a framework for estimating ego noise and to integrate it into the general robot audition framework effectively, we have to consider the following three issues: (1) modeling the process of ego noise estimation, (2) online processing and (3) general applicability of our ego noise estimation method for robot audition. In order to address the modeling issue of ego noise estimation, we first have to resolve three important sub-issues we have determined: Knowledge gathering issue, representa- tion issue and algorithm issue. The templates are good representations of motor noise when the same actions are performed over and over again. We model the ego noise using templates by associating discrete time series data representing the motion (i.e., the angular status of each joint of the robot) with another series of discrete time data representing the ego noise spectrum. The data is stored in a database so that later it can be estimated instantaneously. However, the necessity of offline training poses strict constraints. The new “online” scheme can distinguish between stationary noise (i.e., static fan noise, hardware noise of the robot and possibly changing background noise) and non-stationary ego-motion noise and treat both of them in separate processes. Furthermore, the proposed online training of the templates makes template-based noise estimation method more adequate to real-world applications because it can learn the ego noise of unknown motions on the fly. Whereas the proposed “template learning” mechanism can discriminate the new data entries from the existing templates in the database, the “template update” mechanism adaptively sustains the accuracy and precision of the templates. It also prevents the rapid growth of the size of database. The final issue is the confirmation of general applicability and compliance of the proposed ego noise estimation method on several robot audition applications. The established frameworks for ego noise reduction, noise robust feature extraction, {ASR} and {SSL} are presented. In Chapter 1, we introduce our motivation, our goals, and the technical issues for this study. The problems and requirements for robot audition are explained, and we give the appropriate approaches to these issues. Chapter 2 surveys the literature related to robot audition and signal processing. Since there are different noise sources in a robot environment and ego noise is strongly intertwined with all of them, our robot audition framework has diverse noise processing blocks. We explain the basic methods used in these blocks in a detailed way as existing work. The properties of all noise sources are explained along with a detailed analysis of the noise signals and robot motions. Also, related work is summarized in this chapter. We describe the technical differences between our approaches and conventional ones. In Chapter 3, after specifying general criteria to be able to choose the optimal estimation process for each noise type, we explain how to approach the modeling process of ego noise estimation specifically. Later on, we propose an estimation method called parameterized template estimation. The performance of this original method is compared with those of existing single-channel noise estimation methods. Chapter 4 describes the developments we made on the basic parameterized template estimation system so that it runs online. In order to cope with changing environmental noise, we modify the abstract template concept to our needs. We generate the templates in a way that they only represent the non-stationary noise. The stationary portion of the ego noise with ambient noise is dealt with by a stationary noise estimation method. We explain the details of this unified framework for noise estimation. Moreover, we eliminate the necessity of human intervention in the training procedure by introducing an incremental template learning scheme. Finally, we evaluate the performance of the proposed methods in terms of estimation quality and noise reduction accuracy by using objective performance criteria and discuss the results. Chapter 5 delves into the question of how to suppress the whole-body motion noise of a robot more robustly. For this purpose we integrate template-based ego noise estimation with the already established works from the multi-channel noise reduction literature. Microphone array-based sound source separation is adequate to cancel motor noise with certain spatial properties, thus the performance of this hybrid noise reduction system exceeds the individual performances of the template estimation and multi-channel noise reduction methods. In this chapter, we discuss the implementation and its evaluation in terms of {ASR} accuracy. Chapter 6 describes Missing Feature Theory ({MFT)-based} integration of ego noise reduction and {ASR.} We focus on two different {ASR} systems: single-talker {ASR} and multi-talker {ASR.} Both systems rely on the single-channel and multi-channel noise reduction methods to generate spectro-temporal masks filtering the unreliable acoustic features. We present detailed results regarding recognition accuracy to determine optimal parameters of the mask generation process for each system. In Chapter 7, we provide an extended version of the parameterized template estimation to operate on multi-channel audio data. This feature enables an Sound Source Localization ({SSL)} scheme to whiten the ego noise allowing to eliminate its interfering effect on the the spatio-temporal plane of Multiple {SIgnal} Classification ({MUSIC)} method for {SSL.} We assess the performance in terms of localization accuracy and peak detection rates for {MUSIC.} Chapter 8 outlines the contributions of this thesis and gives an insight into the remaining issues and future work. Chapter 9 summarizes and concludes this dissertation.},
+	school = {Tokyo Institute of Technology},
+	author = {Ince, Gokhan},
+	month = sep,
+	year = {2011},
+	keywords = {·, array, audition, Automatic, Ego, feature, Microphone, Missing, noise, recognition, reduction, Robot, speech, theory}
+}
+
+@inproceedings{ince_ego_2009,
+	title = {Ego noise suppression of a robot using template subtraction},
+	doi = {10.1109/IROS.2009.5354651},
+	abstract = {While a robot is moving, the joints inevitably generate noise due to its motors, i.e. ego-motion noise. This problem is very crucial, especially in humanoid robots, because it tends to have a lot of joints and the motors are located closer to the microphones than the sound sources. In this work, we investigate methods for the prediction and suppression of the ego-motion noise. In the first part, we analyze the performance of different noise subtraction strategies, assuming that the noise prediction problem has been solved. In the second part, we present some results for a noise prediction scheme based on the current robot joint status. Performance is evaluated for a number of criteria, including Automatic Speech Recognition ({ASR).} We demonstrate that our method improves recognition performance during ego-motion considerably.},
+	booktitle = {{IEEE/RSJ} International Conference on Intelligent Robots and Systems, 2009. {IROS} 2009},
+	author = {Ince, G. and Nakadai, K. and Rodemann, T. and Hasegawa, Y. and Tsujino, H. and Imura, J.},
+	month = oct,
+	year = {2009},
+	keywords = {Acoustic noise, automatic speech recognition, Databases, ego motion noise, ego noise suppression, humanoid robots, intelligent robots, Micromotors, microphone arrays, Neural networks, noise abatement, Noise cancellation, Noise generators, noise prediction problem, noise subtraction, Robotics and automation, Speech recognition, template subtraction},
+	pages = {199--204},
+	file = {IEEE Xplore Abstract Record:/home/hwp/.mozilla/firefox/1pw129hc.default-1394317684004/zotero/storage/K58QV5IP/login.html:text/html;IEEE Xplore Full Text PDF:/home/hwp/.mozilla/firefox/1pw129hc.default-1394317684004/zotero/storage/V73GVTPQ/Ince et al. - 2009 - Ego noise suppression of a robot using template su.pdf:application/pdf}
+}
+
+@incollection{vaseghi_spectral_2001,
+	title = {Spectral Subtraction},
+	isbn = {9780470841624},
+	url = {http://dx.doi.org/10.1002/0470841621.ch11},
+	booktitle = {Advanced Digital Signal Processing and Noise Reduction},
+	publisher = {John Wiley \& Sons, Ltd},
+	author = {Vaseghi, Saeed V.},
+	year = {2001},
+	keywords = {{FFT}, Fourier, magnitude, musical tones, power, spectral subtraction},
+	pages = {333–354}
 }

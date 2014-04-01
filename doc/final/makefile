@@ -1,4 +1,4 @@
-TEX    = latexmk -pdf -pdflatex="pdflatex -interaction=batchmode --shell-escape" 
+TEX    = latexmk -pdf -pdflatex="pdflatex -interaction=nonstopmode --shell-escape" 
 PLOT   = gnuplot -e 'set term svg'
 
 PAPER  = final

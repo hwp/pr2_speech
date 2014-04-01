@@ -8,9 +8,13 @@
 \usepackage{amsmath, amsfonts, amssymb, amsxtra}
 
 \usepackage{tikz}
+\usetikzlibrary{arrows,positioning,shapes} 
+
 \usepackage{graphicx}
 \graphicspath{{./fig/}}
+
 \usepackage{subcaption}
+
 \usepackage[svgpath=fig/]{svg}
 
 \usepackage{listings}
@@ -24,12 +28,14 @@
 \begin{document}
  \title{Automatic Speech Recognition for PR2 Robotic Control under ROS} 
 \author{Weipeng He, Natalia Orlova \\ \\
-\small Report in Masterproject Intelligent Robotics, WS 2013/2014\\
-Department of Informatik\\ Hamburg University\\[4mm]}
+\small Report in Master Project Intelligent Robotics, WS 2013/2014\\
+Department of Informatics\\ University of Hamburg}
 \maketitle
 
 \begin{abstract}
-  In this report we would like to present the theories and implementations of our speech recognition system on PR2. 
+  Recent years, the automatic speech recognition techniques have been improved enormously. The application of ASR has been widely adopted for many fields. And, ASR is also demanded to be used in robotics, like voice commands. However, due to its special setting, for example noisy environment, there are still problems to be solved.
+
+  In this report we would like to present the theories and implementations of our speech recognition system on the robot PR2. The work is mainly two parts: the first part is the implementation of ASR system in ROS; the second part is the exploration of using noise reduction techniques for the special environment.
 \end{abstract}
 
 \tableofcontents
@@ -264,7 +270,7 @@ We can clearly see that there could be multiple $m$, which yields the same resul
   \label{fig:window}
 \end{figure}
 
-Although Equation \ref{eq:naiveinv} can still be used for calculating the inverse, it is not a good practice. It is because the $w[n-m]$ in the denominator can be very small, which amplifies small perturbation in the STFT. One of the algorithms to solve this issue is called the \textit{Overlap-add} (OLA) method.
+Although Equation \ref{eq:naiveinv} can still be used for calculating the inverse, it is not a good practice. It is because the $w[n-m]$ in the denominator can be very small, which amplifies small perturbation in the STFT. One of the algorithms to solve this issue is called the \textit{Overlap-add} (OLA) method\cite{crochiere_weighted_1980}.
 
 The idea of OLA is simply calculating the inverse of all window frames and take the weighted average of them. The inverse is calculated as:
 \begin{equation}
@@ -674,7 +680,7 @@ CMU \textit {Festival} Text-to-Speech library. Play-back is realised locally,
 but for future there exist a possibility to realise a sound play-back via
 a PR2 speaker.  
 
-To sum it up,  \textit {speech recognotion} application is a simple speech
+To sum it up,  \textit {speech recognition} application is a simple speech
 recogniser, that serves the purposes of the initial project specifications. It
 is could be extended with other microphone configurations and used with
 different language and acoustic models, including models, specially trained for
@@ -683,8 +689,76 @@ the situation.
 \chapter{Noise Reduction Techniques}
 \label{sec:noise}
 
+Most ASR application works fairly well in noise-free environment. However, in real cases, the environment is not so ideal. There are problems of multiple speakers and environmental noise, which both can affect the result of ASR drastically.
+
+Especially for robots, besides the background noise and the hardware noise of microphone, there is noise from the robot itself. This kind of noise is called \textit{ego noise}\cite{ince_ego_2011}. Ego noise is mainly due to the fans and motors that are in the robot. The audio captured from the microphones mounted on the robot can be corrupted by the ego noise intensely. Although, we can alternatively use the other devices, such as headset to capture sound, it is more natural to use the robot-mount microphones for human-robot interaction.
+
+There are three ways to handle the noise in robotic ASR. The first way is reducing or suppressing the noise by estimate the attribute of noise itself. The second way is separation the speech from all other sound. This way is called the \textit{Sound Source Separation} (SSS). And the third way is training the ASR system by using noisy data.
+
+In our project we explored the first two ways. In this chapter, we will introduce the spectral subtraction methods as well as some sound source separation methods.
+
+\section{Spectral Subtraction}
+Spectral Subtraction is the method of restoration of a noise-free signal by subtraction the average noise spectral from observed the noisy signal \cite{boll_suppression_1979, vaseghi_spectral_2001}. Spectral Subtraction has been long popular for its simplicity and effectiveness.
+
+Mathematically the problem is stated as: The observed signal is $y(t)$ and it is the sum of the original signal $x(t)$ and the additive noise $n(t)$:
+\[ y(t) = x(t) + n(t) \]
+Because STFT is linear transform, their STFT have the same form:
+\[ Y(n,k) = X(n,k) + N(n,k) \]
+where $Y$, $X$ and $N$ are the STFT of observed signal, original signal and noise respectively. Under some assumption, the spectral subtraction states that the original signal spectrum can be estimated by:
+\begin{equation}
+  |\hat{X}(n,k)|^b = |Y(n,k)|^b - \alpha|\hat{N}(k)|^b 
+  \label{eq:specsub}
+\end{equation}
+and the original signal phase can be estimated by:
+\begin{equation}
+  \text{Phase}(\hat{X}(n,k)) = \text{Phase}(Y(n,k))
+  \label{eq:phasees}
+\end{equation}
+
+In Equation \ref{eq:specsub}, $b$ can be either $1$ or $2$. For the case $b=1$, this method is called \textit{Magnitude Spectral Subtraction}, while, if $b=2$, it is called \textit{Power Spectral Subtraction}. $\alpha$ specifies the amount of noise spectrum to be subtracted. $\alpha=1$ is called full noise subtraction. Due to the fact that the noise is always underestimated, sometimes we use $\alpha>1$. And this case is called over-subtraction.
+
+$|\hat{N}(k)|^b$ is an estimation of the noise. In spectral subtraction, it is assumed noise is stationary. Therefore, it can be estimated as the average of noise spectrum:
+\[ |\hat{N}(k)|^b = \frac{1}{M} \sum_{m=1}^{M} |N(n_m, k)|^b \]
+where $N(n_m, k)$ are the STFT when the original noise is not present, e.g. samples taken from a predefined noise file or segment, and $M$ is the total number of these STFT.
+
+Equation \ref{eq:phasees} states that the phase of original signal is directly taken from that of the observed signal. It is due to the assumption that the phase distortion is much smaller than the spectrum distortion.
+
+With both estimation of the spectrum and phase, we can have the whole estimated original signal in time-frequency domain. And if we further use inverse STFT, we can get the restored signal. The block diagram of the whole process is shown in Figure \ref{fig:specsub}.
+
+\begin{figure}[htpb]
+\begin{center}
+  \begin{tikzpicture}[node distance=1cm, auto, ->, thick,
+    filter/.style={rectangle, draw=black, very thick, text centered, minimum size=25pt},
+    operator/.style={circle, draw=black, very thick, text centered, minimum size=12pt, inner sep=0},
+    ]
+    \node (n1) {$y(t)$};
+    \node (n2)[filter, right=of n1] {STFT};
+    \node (n3)[filter, right=of n2] {$|Y(n,k)|^b$};
+    \node (n4)[operator, right=of n3] {$-$};
+    \node (n5)[operator, right=of n4] {$+$};
+    \node (n6)[filter, right=of n5] {Inverse STFT};
+    \node (n7)[right=of n6] {$\hat{x}(t)$};
+    \node (n8)[filter, above=of n3] {Phase$(Y(n,k))$};
+    \node (n9)[operator, regular polygon,regular polygon sides=3, below=of n4] {$\alpha$};
+    \node (n0)[filter, below=of n9] {$\hat{N}(k))$};
+
+    \draw (n1) -- (n2);
+    \draw (n2) -- (n3);
+    \draw (n3) -- (n4);
+    \draw (n4) -- (n5);
+    \draw (n5) -- (n6);
+    \draw (n6) -- (n7);
+    \draw (n2) |- (n8);
+    \draw (n8) -| (n5);
+    \draw (n0) -- (n9);
+    \draw (n9) -- (n4);
+  \end{tikzpicture}
+\end{center}
+\caption{Block diagram of the spectral subtraction process.}
+  \label{fig:specsub}
+\end{figure}
+
 \section{Sound Source Separation}
-\section{Spectral Substraction}
 
 \chapter {Results}
 \label {sec:results}
